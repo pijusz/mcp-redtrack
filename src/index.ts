@@ -70,7 +70,7 @@ async function checkForUpdates() {
   const timer = setTimeout(() => controller.abort(), 3000);
   try {
     const res = await fetch(
-      "https://api.github.com/repos/pijus/mcp-redtrack/releases/latest",
+      "https://api.github.com/repos/pijusz/mcp-redtrack/releases/latest",
       { signal: controller.signal },
     );
     clearTimeout(timer);
