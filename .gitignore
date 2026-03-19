@@ -1,0 +1,6 @@
+node_modules/
+dist/
+mcp-redtrack
+*.tgz
+.env
+.env.local
