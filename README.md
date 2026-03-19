@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="mcp-redtrack" height="52">
+  <img src="logo.svg" alt="mcp-redtrack" width="280" />
 </p>
 
 <h1 align="center">mcp-redtrack</h1>
