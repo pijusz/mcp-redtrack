@@ -1,6 +1,9 @@
 node_modules/
 dist/
 mcp-redtrack
+mcp-redtrack-*
 *.tgz
 .env
-.env.local
+.env.*
+!.env.example
+.DS_Store
