@@ -1,6 +1,6 @@
 {
   "name": "mcp-redtrack",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for RedTrack affiliate tracking API",
   "type": "module",
   "main": "dist/index.js",
@@ -26,13 +26,13 @@
     "inspect": "bunx @modelcontextprotocol/inspector bun src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.24.4"
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
-    "@types/bun": "latest",
-    "typescript": "^5.7.0"
+    "@biomejs/biome": "2.4.8",
+    "@types/bun": "1.3.11",
+    "typescript": "5.9.3"
   },
   "keywords": [
     "mcp",

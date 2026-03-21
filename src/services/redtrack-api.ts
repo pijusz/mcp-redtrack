@@ -52,10 +52,7 @@ export async function fetchWithRetry(
   throw new Error("fetchWithRetry: exhausted retries");
 }
 
-function buildUrl(
-  path: string,
-  params: Record<string, string | number | boolean | undefined>,
-): string {
+function buildUrl(path: string, params: object): string {
   const env = getEnv();
   const url = new URL(path, BASE_URL);
   url.searchParams.set("api_key", env.REDTRACK_API_KEY);
@@ -70,7 +67,7 @@ function buildUrl(
 async function request<T>(
   method: string,
   path: string,
-  params: Record<string, string | number | boolean | undefined> = {},
+  params: object = {},
   body?: unknown,
   opts?: FetchOptions,
 ): Promise<T> {
