@@ -47,7 +47,7 @@
   "homepage": "https://github.com/pijusz/mcp-redtrack#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pijusz/mcp-redtrack"
+    "url": "git+https://github.com/pijusz/mcp-redtrack.git"
   },
   "engines": {
     "node": ">=18"
