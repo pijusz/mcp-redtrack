@@ -2,9 +2,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { dateRange, formatTable, unwrapResponse } from "../services/format.ts";
 import { getClicks, getConversions } from "../services/redtrack-api.ts";
+import { readTool } from "../utils/register-tool.ts";
 
 export function registerLogTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "get_clicks",
     "Get RedTrack click log entries. Returns click-level data including IP, country, device, campaign, offer, landing, and sub-parameter details. Max 10000 per page.",
     {
@@ -55,7 +57,8 @@ export function registerLogTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_conversions",
     "Get RedTrack conversion log entries. Returns conversion-level data including click ID, payout, cost, revenue, country, device, attribution type, and all sub-parameters. Max 10000 per page.",
     {

@@ -7,9 +7,11 @@ import {
   unwrapResponse,
 } from "../services/format.ts";
 import { getReport } from "../services/redtrack-api.ts";
+import { readTool } from "../utils/register-tool.ts";
 
 export function registerReportTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "get_report",
     "Get RedTrack aggregated report grouped by a dimension (e.g. campaign, offer, source, country, sub1-sub20, date, hour). Includes metrics like impressions, clicks, conversions, cost, revenue, profit, ROI, CR, EPC, CPC.",
     {

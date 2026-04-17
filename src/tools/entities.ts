@@ -10,9 +10,11 @@ import {
   getSourceById,
   getSources,
 } from "../services/redtrack-api.ts";
+import { readTool } from "../utils/register-tool.ts";
 
 export function registerEntityTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "get_offers",
     "List RedTrack offers with optional filtering by title, network, or status.",
     {
@@ -37,7 +39,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_offer",
     "Get a single RedTrack offer by ID with full details.",
     {
@@ -51,7 +54,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_sources",
     "List all RedTrack traffic sources configured in the account.",
     {},
@@ -66,7 +70,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_source",
     "Get a single RedTrack traffic source by ID.",
     {
@@ -80,7 +85,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_networks",
     "List all RedTrack affiliate networks (offer sources).",
     {},
@@ -95,7 +101,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_landings",
     "List all RedTrack landing pages and prelandings.",
     {},
@@ -110,7 +117,8 @@ export function registerEntityTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_settings",
     "Get RedTrack account settings including timezone, currency, and conversion types.",
     {},

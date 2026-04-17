@@ -6,9 +6,11 @@ import {
   getCampaigns,
   getCampaignsV2,
 } from "../services/redtrack-api.ts";
+import { readTool } from "../utils/register-tool.ts";
 
 export function registerCampaignTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "get_campaigns",
     "List RedTrack campaigns with optional filtering by title, status, source, tags, and date range. Returns campaign config and optionally embedded stats when total_stat is true.",
     {
@@ -39,7 +41,8 @@ export function registerCampaignTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_campaign",
     "Get a single RedTrack campaign by ID with full configuration details including streams, postbacks, and integrations.",
     {
@@ -53,7 +56,8 @@ export function registerCampaignTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  readTool(
+    server,
     "get_campaigns_v2",
     "List RedTrack campaigns using the v2 endpoint. Similar to get_campaigns but with updated response format.",
     {
