@@ -2,32 +2,39 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v*"
 
 permissions:
   contents: write
 
 jobs:
   build:
-    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - target: bun-darwin-arm64
-            runner: macos-latest
+          - os: macos-latest
+            target: bun-darwin-arm64
             artifact: mcp-redtrack-darwin-arm64
-          - target: bun-darwin-x64
-            runner: macos-13
+          - os: macos-latest
+            target: bun-darwin-x64
             artifact: mcp-redtrack-darwin-x64
-          - target: bun-linux-x64
-            runner: ubuntu-latest
+          - os: ubuntu-latest
+            target: bun-linux-x64
             artifact: mcp-redtrack-linux-x64
-          - target: bun-windows-x64
-            runner: windows-latest
+          - os: windows-latest
+            target: bun-windows-x64
             artifact: mcp-redtrack-windows-x64.exe
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Set version from tag
         run: |
@@ -36,9 +43,10 @@ jobs:
         shell: bash
 
       - run: bun install --frozen-lockfile
+
       - run: bun test
 
-      - name: Build binary
+      - name: Build standalone binary
         run: bun build src/index.ts --compile --target=${{ matrix.target }} --outfile=${{ matrix.artifact }}
 
       - uses: actions/upload-artifact@v4
@@ -46,42 +54,86 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
 
+  # Gated on publish, not just build. Both used to hang off build and raced, so
+  # a failed npm verification still left a GitHub release advertising a version
+  # nobody could install. Ordering it after publish prevents that state instead
+  # of reporting it after the fact.
   release:
-    needs: build
+    needs: [build, publish]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: Make binaries executable
-        run: chmod +x artifacts/mcp-redtrack-darwin-*/mcp-redtrack-darwin-* artifacts/mcp-redtrack-linux-*/mcp-redtrack-linux-*
+        run: chmod +x artifacts/*/mcp-redtrack-* 2>/dev/null || true
 
-      - uses: softprops/action-gh-release@v2
+      - name: Create release
+        uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: artifacts/**/*
+          files: artifacts/*/mcp-redtrack-*
+          # "legacy" weighs semver, not just creation date, so backfilling an
+          # older tag cannot steal the Latest badge. src/index.ts polls
+          # releases/latest, so a wrong badge tells users to downgrade.
+          make_latest: legacy
 
   publish:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: bun install --frozen-lockfile
 
       - name: Set version from tag
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           bun -e "const p=require('./package.json');p.version='$VERSION';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
 
-      - run: bun install --frozen-lockfile
-      - run: bun run build:npm
+      - name: Build for npm
+        run: bun run build:npm
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          registry-url: https://registry.npmjs.org
-
-      - run: npm publish --access public
+      # Publishing is done locally with an npmrc token, so NPM_TOKEN is usually
+      # unset. Skip rather than fail the release run; if the secret is ever
+      # added, this starts publishing automatically with no further change.
+      - name: Publish to npm
+        if: ${{ env.NODE_AUTH_TOKEN != '' }}
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # No token means the publish is expected to happen locally. Don't just
+      # assume it did — a GitHub release pointing at a version that isn't on
+      # npm is worse than a failed workflow. Poll, then fail loudly.
+      - name: Verify the version reached npm
+        if: ${{ env.NODE_AUTH_TOKEN == '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "NPM_TOKEN unset — expecting a local publish of $PKG@$VERSION." >> $GITHUB_STEP_SUMMARY
+          for i in $(seq 1 20); do
+            if npm view "$PKG@$VERSION" version >/dev/null 2>&1; then
+              echo "Confirmed $PKG@$VERSION is on npm." >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            echo "Attempt $i/20: not on npm yet, waiting 30s..."
+            sleep 30
+          done
+          echo "::error::$PKG@$VERSION is not on npm after 10 minutes. The GitHub release for $GITHUB_REF_NAME points at a version nobody can install — run 'npm publish' locally."
+          echo "FAILED: $PKG@$VERSION never appeared on npm." >> $GITHUB_STEP_SUMMARY
+          exit 1
