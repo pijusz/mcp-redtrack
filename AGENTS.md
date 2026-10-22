@@ -6,6 +6,7 @@
 src/
 ├── index.ts              # Entry point (stdio transport)
 ├── server.ts             # McpServer creation + tool registration
+├── version.ts            # VERSION from root package.json
 ├── config/
 │   └── env.ts            # Zod-validated environment config
 ├── services/
@@ -16,9 +17,10 @@ src/
 │   ├── campaigns.ts      # Campaign tools (3)
 │   ├── logs.ts           # Click & conversion log tools (2)
 │   ├── reports.ts        # Aggregated report tool (1)
-│   └── entities.ts       # Offers, sources, networks, landings, settings (7)
+│   └── entities.ts       # Offers, sources, networks, landings, streams, domains, dictionaries, settings (12)
 └── utils/
-    └── logger.ts         # stderr logger
+    ├── logger.ts         # stderr logger
+    └── register-tool.ts  # readTool/writeTool helpers (MCP annotations)
 ```
 
 ## Authentication
@@ -30,7 +32,7 @@ All RedTrack API calls use `api_key` as a query parameter. The key is read from
 
 - Base URL: `https://api.redtrack.io`
 - All GET endpoints accept query parameters
-- Pagination: `page` + `per` params
+- Pagination: `page` + `per` params (`per` is ignored without `page`; the client defaults `page=1`)
 - Date filtering: `date_from` + `date_to` (YYYY-MM-DD)
 - Status values: 1=active, 2=paused, 3=deleted
 - Comma-separated IDs for multi-filter (e.g. `ids=1,2,3`)
@@ -46,7 +48,7 @@ rt_source, rt_medium, rt_campaign, rt_adgroup, rt_ad, rt_placement, rt_keyword
 
 ```typescript
 export function registerXTools(server: McpServer): void {
-  server.tool("tool_name", "description", { ...zodSchema }, async (args) => {
+  readTool(server, "tool_name", "description", { ...zodSchema }, async (args) => {
     const data = await apiCall(args);
     return { content: [{ type: "text", text: formatResult(data) }] };
   });

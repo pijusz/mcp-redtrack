@@ -38,7 +38,9 @@ Add to your MCP settings JSON:
 }
 ```
 
-## Tools (14)
+## Tools (18)
+
+All tools are read-only (annotated with `readOnlyHint`); the server never modifies your RedTrack account.
 
 ### Campaigns
 | Tool | Description |
@@ -56,17 +58,22 @@ Add to your MCP settings JSON:
 ### Reports
 | Tool | Description |
 |------|-------------|
-| `get_report` | Aggregated stats grouped by dimension (campaign, offer, country, date, sub1-20, etc.) |
+| `get_report` | Aggregated stats grouped by one or more dimensions (campaign, offer, country, date, sub1-20, etc.), with sorting |
 
 ### Entities
 | Tool | Description |
 |------|-------------|
-| `get_offers` | List offers with filtering |
+| `get_offers` | List offers, filter by title, network, country, status, tags |
 | `get_offer` | Single offer by ID |
 | `get_sources` | List traffic sources |
 | `get_source` | Single source by ID |
 | `get_networks` | List affiliate networks |
-| `get_landings` | List landing pages |
+| `get_network` | Single affiliate network by ID |
+| `get_landings` | List landing pages and prelandings |
+| `get_landing` | Single landing by ID |
+| `get_streams` | List streams |
+| `get_domains` | List tracking domains |
+| `get_dictionary` | Reference lists: countries, currencies, timezones, browsers, OS, devices, ISPs, etc. |
 | `get_settings` | Account settings (timezone, currency, conversion types) |
 
 ## Environment variables
