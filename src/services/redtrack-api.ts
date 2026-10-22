@@ -56,12 +56,31 @@ function buildUrl(path: string, params: object): string {
   const env = getEnv();
   const url = new URL(path, BASE_URL);
   url.searchParams.set("api_key", env.REDTRACK_API_KEY);
+  // RedTrack ignores `per` unless `page` is also present (verified live), so a
+  // bare `per` would silently return the full list. Default to the first page.
+  const p = params as Record<string, unknown>;
+  if (p.per !== undefined && p.page === undefined) {
+    url.searchParams.set("page", "1");
+  }
   for (const [key, val] of Object.entries(params)) {
     if (val !== undefined && val !== "") {
       url.searchParams.set(key, String(val));
     }
   }
   return url.toString();
+}
+
+function describeError(method: string, path: string, status: number, body: string) {
+  const snippet = body.length > 500 ? `${body.slice(0, 500)}...` : body;
+  let hint = "";
+  if (status === 401 || status === 403) {
+    hint = " Check that REDTRACK_API_KEY is valid and has API access.";
+  } else if (status === 404) {
+    hint = " The resource was not found; verify the ID.";
+  } else if (status === 429) {
+    hint = " Rate limited by RedTrack; retry later or narrow the query.";
+  }
+  return `RedTrack API ${method} ${path} failed with HTTP ${status}.${hint} Response: ${snippet || "(empty)"}`;
 }
 
 async function request<T>(
@@ -80,7 +99,7 @@ async function request<T>(
   const res = await fetchWithRetry(url, init, opts);
   const text = await res.text();
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${text}`);
+    throw new Error(describeError(method, path, res.status, text));
   }
   try {
     return JSON.parse(text) as T;
@@ -115,7 +134,7 @@ export function getCampaignsV2(params: CampaignListParams = {}) {
 }
 
 export function getCampaignById(id: string) {
-  return request<unknown>("GET", `/campaigns/${id}`);
+  return request<unknown>("GET", `/campaigns/${encodeURIComponent(id)}`);
 }
 
 export function updateCampaignStatus(ids: string, status: number) {
@@ -185,6 +204,9 @@ export interface ReportParams {
   sub3?: string;
   sub4?: string;
   sub5?: string;
+  sortby?: string;
+  direction?: "asc" | "desc";
+  total?: boolean;
   page?: number;
   per?: number;
 }
@@ -195,13 +217,26 @@ export function getReport(params: ReportParams) {
 
 // ── Offers ─────────────────────────────────────────────────────────
 
-export interface OfferListParams {
+export interface EntityListParams {
   title?: string;
   ids?: string;
-  network_id?: string;
-  status?: string;
   page?: number;
   per?: number;
+  date_from?: string;
+  date_to?: string;
+  total_stat?: boolean;
+}
+
+export interface OfferListParams extends EntityListParams {
+  networks?: string;
+  countries?: string;
+  status?: string;
+  tags?: string;
+}
+
+export interface LandingListParams extends EntityListParams {
+  type?: string;
+  tags?: string;
 }
 
 export function getOffers(params: OfferListParams = {}) {
@@ -209,29 +244,75 @@ export function getOffers(params: OfferListParams = {}) {
 }
 
 export function getOfferById(id: string) {
-  return request<unknown>("GET", `/offers/${id}`);
+  return request<unknown>("GET", `/offers/${encodeURIComponent(id)}`);
 }
 
 // ── Sources ────────────────────────────────────────────────────────
 
-export function getSources() {
-  return request<unknown>("GET", "/sources");
+export function getSources(params: EntityListParams = {}) {
+  return request<unknown>("GET", "/sources", params);
 }
 
 export function getSourceById(id: string) {
-  return request<unknown>("GET", `/sources/${id}`);
+  return request<unknown>("GET", `/sources/${encodeURIComponent(id)}`);
 }
 
 // ── Networks ───────────────────────────────────────────────────────
 
-export function getNetworks() {
-  return request<unknown>("GET", "/networks");
+export function getNetworks(params: EntityListParams = {}) {
+  return request<unknown>("GET", "/networks", params);
+}
+
+export function getNetworkById(id: string) {
+  return request<unknown>("GET", `/networks/${encodeURIComponent(id)}`);
 }
 
 // ── Landings ───────────────────────────────────────────────────────
 
-export function getLandings() {
-  return request<unknown>("GET", "/landings");
+export function getLandings(params: LandingListParams = {}) {
+  return request<unknown>("GET", "/landings", params);
+}
+
+export function getLandingById(id: string) {
+  return request<unknown>("GET", `/landings/${encodeURIComponent(id)}`);
+}
+
+// ── Streams / domains ──────────────────────────────────────────────
+
+export function getStreams(params: { title?: string; page?: number; per?: number } = {}) {
+  return request<unknown>("GET", "/streams", params);
+}
+
+export function getDomains(params: { type?: string; page?: number; per?: number } = {}) {
+  return request<unknown>("GET", "/domains", params);
+}
+
+// ── Dictionaries ───────────────────────────────────────────────────
+
+export const DICTIONARIES = [
+  "countries",
+  "regions",
+  "cities",
+  "currencies",
+  "timezones",
+  "languages",
+  "categories",
+  "browsers",
+  "browser_fullnames",
+  "os",
+  "os_fullnames",
+  "devices",
+  "device_brands",
+  "device_fullnames",
+  "connection_types",
+  "isp",
+  "proxy_types",
+] as const;
+
+export type Dictionary = (typeof DICTIONARIES)[number];
+
+export function getDictionary(name: Dictionary) {
+  return request<unknown>("GET", `/${name}`);
 }
 
 // ── Settings ───────────────────────────────────────────────────────

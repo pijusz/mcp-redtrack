@@ -1,15 +1,15 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadEnv } from "./config/env.ts";
-import pkg from "./package.json" with { type: "json" };
 import { createServer } from "./server.ts";
 import { log } from "./utils/logger.ts";
+import { VERSION } from "./version.ts";
 
 // ── CLI flags ──────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
 
 if (args.includes("--version") || args.includes("-v")) {
-  console.log(pkg.version);
+  console.log(VERSION);
   process.exit(0);
 }
 
@@ -59,7 +59,7 @@ async function main() {
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  log.info(`mcp-redtrack v${pkg.version} running on stdio`);
+  log.info(`mcp-redtrack v${VERSION} running on stdio`);
 
   // Non-blocking update check
   checkForUpdates().catch(() => {});
@@ -77,12 +77,22 @@ async function checkForUpdates() {
     if (!res.ok) return;
     const data = (await res.json()) as { tag_name?: string };
     const latest = data.tag_name?.replace(/^v/, "");
-    if (latest && latest !== pkg.version) {
-      log.info(`Update available: v${latest} (current: v${pkg.version})`);
+    if (latest && isNewer(latest, VERSION)) {
+      log.info(`Update available: v${latest} (current: v${VERSION})`);
     }
   } catch {
     clearTimeout(timer);
   }
+}
+
+function isNewer(a: string, b: string): boolean {
+  const pa = a.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const pb = b.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d > 0;
+  }
+  return false;
 }
 
 main().catch((err) => {

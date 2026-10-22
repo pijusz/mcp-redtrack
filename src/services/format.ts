@@ -79,9 +79,15 @@ export function unwrapResponse(data: unknown): {
   items: Record<string, unknown>[];
   total?: number;
 } {
+  if (data === null || data === undefined || data === "") return { items: [] };
   if (Array.isArray(data)) {
-    return { items: data as Record<string, unknown>[] };
+    return {
+      items: data.map((v) =>
+        v !== null && typeof v === "object" ? v : { value: v },
+      ) as Record<string, unknown>[],
+    };
   }
+  if (typeof data !== "object") return { items: [{ value: data }] };
   const obj = data as Record<string, unknown>;
   if (Array.isArray(obj?.items)) {
     return {

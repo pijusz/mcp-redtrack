@@ -18,7 +18,7 @@ export function registerReportTools(server: McpServer): void {
       group: z
         .string()
         .describe(
-          "Grouping dimension: campaign, offer, source, landing, network, country, region, city, os, browser, device, device_brand, connection_type, isp, date, hour, day_of_week, sub1-sub20, rt_source, rt_medium, rt_campaign, rt_adgroup, rt_ad, rt_placement, rt_keyword",
+          "Grouping dimension(s), comma-separated for nested groups (e.g. campaign,sub1): campaign, offer, source, landing, network, country, region, city, os, browser, device, device_brand, connection_type, isp, date, hour, day_of_week, sub1-sub20, rt_source, rt_medium, rt_campaign, rt_adgroup, rt_ad, rt_placement, rt_keyword",
         ),
       date_from: z
         .string()
@@ -53,6 +53,20 @@ export function registerReportTools(server: McpServer): void {
       sub3: z.string().optional().describe("Filter by sub3"),
       sub4: z.string().optional().describe("Filter by sub4"),
       sub5: z.string().optional().describe("Filter by sub5"),
+      sortby: z
+        .string()
+        .optional()
+        .describe(
+          "Metric(s) to sort by, up to 3 comma-separated (e.g. revenue, profit, clicks, roas)",
+        ),
+      direction: z
+        .enum(["asc", "desc"])
+        .optional()
+        .describe("Sort direction for sortby (default asc)"),
+      total: z
+        .boolean()
+        .optional()
+        .describe("Include total stats (RedTrack `total` flag)"),
       page: z.number().optional().describe("Page number"),
       per: z.number().optional().describe("Items per page (max 1000)"),
     },
@@ -75,6 +89,9 @@ export function registerReportTools(server: McpServer): void {
         ...(args.sub3 && { sub3: args.sub3 }),
         ...(args.sub4 && { sub4: args.sub4 }),
         ...(args.sub5 && { sub5: args.sub5 }),
+        ...(args.sortby && { sortby: args.sortby }),
+        ...(args.direction !== undefined && { direction: args.direction }),
+        ...(args.total !== undefined && { total: args.total }),
         ...(args.page !== undefined && { page: args.page }),
         ...(args.per !== undefined && { per: args.per }),
       };
