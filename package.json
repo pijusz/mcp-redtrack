@@ -1,6 +1,6 @@
 {
   "name": "mcp-redtrack",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MCP server for RedTrack affiliate tracking API",
   "type": "module",
   "main": "dist/index.js",
